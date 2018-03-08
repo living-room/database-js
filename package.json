@@ -1,6 +1,6 @@
 {
-  "name": "roomdb",
-  "version": "0.0.3",
+  "name": "living-room-database",
+  "version": "0.1.0",
   "description": "A Datalog-style database that enables programmers to represent facts in natural language.",
   "main": "dist/RoomDB.js",
   "dependencies": {
