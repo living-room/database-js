@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alexwarth/roomdb.git"
+    "url": "git+https://github.com/jedahan/living-room-database.git"
   },
   "keywords": [
     "datalog",
@@ -33,9 +33,9 @@
   "author": "Alex Warth <alexwarth@gmail.com> (http://alexwarth.com)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/alexwarth/roomdb/issues"
+    "url": "https://github.com/jedahan/living-room-database/issues"
   },
-  "homepage": "https://github.com/alexwarth/roomdb#readme",
+  "homepage": "https://github.com/jedahan/living-room-database#readme",
   "scripts": {
     "clean": "rm dist/*",
     "build-web": "node node_modules/browserify/bin/cmd.js src/roomdb-web.js -s roomdb -o dist/roomdb-web.js && node node_modules/uglify-es/bin/uglifyjs dist/roomdb-web.js > dist/roomdb-web.min.js",
