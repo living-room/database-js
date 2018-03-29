@@ -1,38 +1,39 @@
-'use strict';
+'use strict'
 
-import {Term, Variable, Wildcard} from './terms'
+import { Term, Variable, Wildcard } from './terms'
 
 class Fact {
-  constructor(terms) {
-    this.terms = terms;
+  constructor (terms) {
+    this.terms = terms
   }
 
-  hasVariablesOrWildcards() {
-    return this.terms.some(term =>
-        term instanceof Variable ||
-        term instanceof Wildcard);
+  hasVariablesOrWildcards () {
+    return this.terms.some(
+      term => term instanceof Variable || term instanceof Wildcard
+    )
   }
 
-  match(that, env) {
+  match (that, env) {
     if (this.terms.length !== that.terms.length) {
-      return null;
+      return null
     }
     for (let idx = 0; idx < this.terms.length; idx++) {
-      const thisTerm = this.terms[idx];
-      const thatTerm = that.terms[idx];
+      const thisTerm = this.terms[idx]
+      const thatTerm = that.terms[idx]
       if (!thisTerm.match(thatTerm, env)) {
-        return null;
+        return null
       }
     }
-    return env;
+    return env
   }
 
-  toString() {
-    return this.terms.map(term => term.toString()).join('');
+  toString () {
+    return this.terms.map(term => term.toString()).join('')
   }
 }
 
-Fact.fromJSON =
-    jsonTerms => new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)));
+Fact.fromJSON = jsonTerms => {
+  return new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)))
+}
 
 export default Fact

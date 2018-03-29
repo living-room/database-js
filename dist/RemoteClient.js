@@ -65,40 +65,40 @@ const grammar = ohm.grammar(`
 `);
 
 const semantics = grammar.createSemantics().addOperation('parse', {
-  factOrPattern(terms) {
-    return terms.parse();
+  factOrPattern (terms) {
+    return terms.parse()
   },
-  id(_, cs) {
-    return {id: cs.sourceString};
+  id (_, cs) {
+    return { id: cs.sourceString }
   },
-  value_true(_) {
-    return {value: true};
+  value_true (_) {
+    return { value: true }
   },
-  value_false(_) {
-    return {value: false};
+  value_false (_) {
+    return { value: false }
   },
-  value_null(_) {
-    return {value: null};
+  value_null (_) {
+    return { value: null }
   },
-  variable(_, cs) {
-    return {variable: cs.sourceString};
+  variable (_, cs) {
+    return { variable: cs.sourceString }
   },
-  wildcard(_) {
-    return {wildcard: true};
+  wildcard (_) {
+    return { wildcard: true }
   },
-  hole(_) {
-    return {hole: true};
+  hole (_) {
+    return { hole: true }
   },
-  word_nonspace(_) {
-    return {word: this.sourceString};
+  word_nonspace (_) {
+    return { word: this.sourceString }
   },
-  word_space(_) {
-    return {word: ' '};
+  word_space (_) {
+    return { word: ' ' }
   },
-  number(_1, _2, _3) {
-    return {value: parseFloat(this.sourceString)};
+  number (_1, _2, _3) {
+    return { value: parseFloat(this.sourceString) }
   },
-  string(_oq, cs, _cq) {
+  string (_oq, cs, _cq) {
     const chars = [];
     let idx = 0;
     cs = cs.parse();
@@ -107,82 +107,87 @@ const semantics = grammar.createSemantics().addOperation('parse', {
       if (c === '\\' && idx < cs.length) {
         c = cs[idx++];
         switch (c) {
-          case 'n': c = '\n'; break;
-          case 't': c = '\t'; break;
-          default: idx--;
+          case 'n':
+            c = '\n';
+            break
+          case 't':
+            c = '\t';
+            break
+          default:
+            idx--;
         }
       }
       chars.push(c);
     }
-    return {value: chars.join('')};
+    return { value: chars.join('') }
   },
-  _terminal() {
-    return this.sourceString;
+  _terminal () {
+    return this.sourceString
   }
 });
 
-function parse(str, optRule) {
+function parse (str, optRule) {
   const rule = optRule || 'factOrPattern';
   const matchResult = grammar.match(str.trim(), rule);
   if (matchResult.succeeded()) {
-    return semantics(matchResult).parse();
+    return semantics(matchResult).parse()
   } else {
-    throw new Error(`invalid ${rule}: ${str}`);
+    throw new Error(`invalid ${rule}: ${str}`)
   }
 }
 
 const MAX_PARSE_CACHE_SIZE = 1000;
 
 class AbstractClient {
-  constructor(id) {
+  constructor (id) {
     this._id = id;
     this._parseCache = new Map();
     this._asserts = [];
     this._retracts = [];
   }
 
-  assert(factString, ...fillerValues) {
+  assert (factString, ...fillerValues) {
     const fact = this._toJSONFactOrPattern(factString, ...fillerValues);
     this._asserts.push(fact);
   }
 
-  retract(patternString, ...fillerValues) {
+  retract (patternString, ...fillerValues) {
     const pattern = this._toJSONFactOrPattern(patternString, ...fillerValues);
     this._retracts.push(pattern);
   }
 
-  async flushChanges() {
-    throw new Error('subclass responsibility');
+  async flushChanges () {
+    throw new Error('subclass responsibility')
   }
 
-  async immediatelyAssert(factString, ...fillerValues) {
+  async immediatelyAssert (factString, ...fillerValues) {
     this.assert(factString, ...fillerValues);
     await this.flushChanges();
   }
 
-  async immediatelyRetract(patternString, ...fillerValues) {
+  async immediatelyRetract (patternString, ...fillerValues) {
     this.retract(patternString, ...fillerValues);
     await this.flushChanges();
   }
 
-  async immediatelyRetractEverythingAbout(name) {
-    throw new Error('subclass responsibility');
+  async immediatelyRetractEverythingAbout (name) {
+    throw new Error('subclass responsibility')
   }
 
-  async immediatelyRetractEverythingAssertedByMe() {
-    throw new Error('subclass responsibility');
+  async immediatelyRetractEverythingAssertedByMe () {
+    throw new Error('subclass responsibility')
   }
 
-  async getAllFacts() {
-    throw new Error('subclass responsibility');
+  async getAllFacts () {
+    throw new Error('subclass responsibility')
   }
 
-  _toJSONFactOrPattern(factOrPatternString, ...fillerValues) {
+  _toJSONFactOrPattern (factOrPatternString, ...fillerValues) {
     if (arguments.length === 0) {
-      throw new Error('not enough arguments!');
+      throw new Error('not enough arguments!')
     }
     if (typeof factOrPatternString !== 'string') {
-      throw new Error('factOrPatternString must be a string!');
+      throw new Error('factOrPatternString must be a string!')
     }
     let terms = this._parse(factOrPatternString);
     if (fillerValues.length > 0) {
@@ -192,252 +197,244 @@ class AbstractClient {
       const term = terms[idx];
       if (term.hasOwnProperty('hole')) {
         if (fillerValues.length === 0) {
-          throw new Error('not enough filler values!');
+          throw new Error('not enough filler values!')
         }
         terms[idx] = this._toJSONTerm(fillerValues.shift());
       }
     }
     if (fillerValues.length > 0) {
-      throw new Error('too many filler values!');
+      throw new Error('too many filler values!')
     }
-    return terms;
+    return terms
   }
 
-  _toJSONTerm(value) {
-    return {value: value};
+  _toJSONTerm (value) {
+    return { value: value }
   }
 
-  _parse(factOrPatternString) {
+  _parse (factOrPatternString) {
     if (this._parseCache.has(factOrPatternString)) {
-      return this._parseCache.get(factOrPatternString);
+      return this._parseCache.get(factOrPatternString)
     } else {
       this._clearParseCacheIfTooBig();
       const terms = parse(factOrPatternString);
       this._parseCache.set(factOrPatternString, terms);
-      return terms;
+      return terms
     }
   }
 
-  _clearParseCacheIfTooBig() {
+  _clearParseCacheIfTooBig () {
     if (this._parseCache.size > MAX_PARSE_CACHE_SIZE) {
       this.clearParseCache();
     }
   }
 
-  clearParseCache() {
+  clearParseCache () {
     this._parseCache.clear();
   }
 }
 
 class Term {
-  toString() {
-    throw new Error('subclass responsibility');
+  toString () {
+    throw new Error('subclass responsibility')
   }
 
-  toJSON() {
-    throw new Error('subclass responsibility');
+  toJSON () {
+    throw new Error('subclass responsibility')
   }
 
-  toRawValue() {
-    throw new Error('subclass responsibility');
+  toRawValue () {
+    throw new Error('subclass responsibility')
   }
 
-  match(that, env) {
-    throw new Error('subclass responsibility');
+  match (that, env) {
+    throw new Error('subclass responsibility')
   }
 }
 
 Term.fromJSON = json => {
   if (json.hasOwnProperty('id')) {
-    return new Id(json.id);
+    return new Id(json.id)
   } else if (json.hasOwnProperty('word')) {
-    return new Word(json.word);
+    return new Word(json.word)
   } else if (json.hasOwnProperty('value')) {
-    return new Value(json.value);
+    return new Value(json.value)
   } else if (json.hasOwnProperty('blobRef')) {
-    return new BlobRef(json.blobRef);
+    return new BlobRef(json.blobRef)
   } else if (json.hasOwnProperty('variable')) {
-    return new Variable(json.variable);
+    return new Variable(json.variable)
   } else if (json.hasOwnProperty('wildcard')) {
-    return new Wildcard();
+    return new Wildcard()
   } else if (json.hasOwnProperty('hole')) {
-    return new Hole();
+    return new Hole()
   } else {
-    throw new Error('unrecognized JSON term: ' + JSON.stringify(json));
+    throw new Error('unrecognized JSON term: ' + JSON.stringify(json))
   }
 };
 
 class Id extends Term {
-  constructor(name) {
+  constructor (name) {
     super();
     this.name = name;
   }
 
-  toString() {
-    return '#' + this.name;
+  toString () {
+    return '#' + this.name
   }
 
-  toJSON() {
-    return {id: this.name};
+  toJSON () {
+    return { id: this.name }
   }
 
-  toRawValue() {
-    return this;
+  toRawValue () {
+    return this
   }
 
-  match(that, env) {
-    return that instanceof Id && this.name === that.name ?
-        env :
-        null;
+  match (that, env) {
+    return that instanceof Id && this.name === that.name ? env : null
   }
 }
 
 class Word extends Term {
-  constructor(value) {
+  constructor (value) {
     super();
     this.value = value;
   }
 
-  toString() {
-    return this.value;
+  toString () {
+    return this.value
   }
 
-  toJSON() {
-    return {word: this.value};
+  toJSON () {
+    return { word: this.value }
   }
 
-  toRawValue() {
-    return this;
+  toRawValue () {
+    return this
   }
 
-  match(that, env) {
-    return that instanceof Word && this.value === that.value ?
-        env :
-        null;
+  match (that, env) {
+    return that instanceof Word && this.value === that.value ? env : null
   }
 }
 
 class Value extends Term {
-  constructor(value) {
+  constructor (value) {
     super();
     this.value = value;
   }
 
-  toString() {
-    return JSON.stringify(this.value);
+  toString () {
+    return JSON.stringify(this.value)
   }
 
-  toJSON() {
-    return {value: this.value};
+  toJSON () {
+    return { value: this.value }
   }
 
-  toRawValue() {
-    return this.value;
+  toRawValue () {
+    return this.value
   }
 
-  match(that, env) {
-    return that instanceof Value && this.value === that.value ?
-        env :
-        null;
+  match (that, env) {
+    return that instanceof Value && this.value === that.value ? env : null
   }
 }
 
 class BlobRef extends Term {
-  constructor(id) {
+  constructor (id) {
     super();
     this.id = id;
   }
 
-  toString() {
-    return '@' + this.id;
+  toString () {
+    return '@' + this.id
   }
 
-  toJSON() {
-    return {blobRef: this.id};
+  toJSON () {
+    return { blobRef: this.id }
   }
 
-  toRawValue() {
-    return this;
+  toRawValue () {
+    return this
   }
 
-  match(that, env) {
-    return that instanceof BlobRef && this.id === that.id ?
-        env :
-        null;
+  match (that, env) {
+    return that instanceof BlobRef && this.id === that.id ? env : null
   }
 }
 
 class Variable extends Term {
-  constructor(name) {
+  constructor (name) {
     super();
     this.name = name;
   }
 
-  toString() {
-    return '$' + this.name;
+  toString () {
+    return '$' + this.name
   }
 
-  toJSON() {
-    return {variable: this.name};
+  toJSON () {
+    return { variable: this.name }
   }
 
-  toRawValue() {
-    throw new Error('Variable\'s toRawValue() should never be called!');
+  toRawValue () {
+    throw new Error("Variable's toRawValue() should never be called!")
   }
 
-  match(that, env) {
+  match (that, env) {
     if (env[this.name] === undefined) {
       env[this.name] = that;
-      return env;
+      return env
     } else {
-      return env[this.name].match(that, env);
+      return env[this.name].match(that, env)
     }
   }
 }
 
 class Wildcard extends Term {
-  constructor() {
+  constructor () {
     super();
     // no-op
   }
 
-  toString() {
-    return '$';
+  toString () {
+    return '$'
   }
 
-  toJSON() {
-    return {wildcard: true};
+  toJSON () {
+    return { wildcard: true }
   }
 
-  toRawValue() {
-    throw new Error('Wildcard\'s toRawValue() should never be called!');
+  toRawValue () {
+    throw new Error("Wildcard's toRawValue() should never be called!")
   }
 
-  match(that, env) {
-    return env;
+  match (that, env) {
+    return env
   }
 }
 
 class Hole extends Term {
-  constructor() {
+  constructor () {
     super();
     // no-op
   }
 
-  toString() {
-    return '_';
+  toString () {
+    return '_'
   }
 
-  toJSON() {
-    return {hole: true};
+  toJSON () {
+    return { hole: true }
   }
 
-  toRawValue() {
-    throw new Error('Hole\'s toRawValue() should never be called!');
+  toRawValue () {
+    throw new Error("Hole's toRawValue() should never be called!")
   }
 
-  match(that, env) {
-    throw new Error('Hole\'s match() should never be called!');
+  match (that, env) {
+    throw new Error("Hole's match() should never be called!")
   }
 }
 
@@ -445,31 +442,35 @@ class Hole extends Term {
 // (This makes it possible to run RemoteClient in the browser and in node-js.)
 const fetch = (() => {
   try {
-    return fetch;
+    return fetch
   } catch (e) {
-    return require('node-fetch');
+    return require('node-fetch')
   }
 })();
 
 class RemoteClient extends AbstractClient {
-  constructor(address, port, id) {
+  constructor (address, port, id) {
     super(id);
     this._address = address;
     this._port = port;
   }
 
-  select(...patternStrings) {
-    const patterns = patternStrings.map(p =>
-      p instanceof Array ?
-          this._toJSONFactOrPattern(...p) :
-          this._toJSONFactOrPattern(p));
+  select (...patternStrings) {
+    const patterns = patternStrings.map(
+      p =>
+        p instanceof Array
+          ? this._toJSONFactOrPattern(...p)
+          : this._toJSONFactOrPattern(p)
+    );
     const solutions = async () => {
       const params = `query=${JSON.stringify(patterns)}`;
-      const response = await fetch(`http://${this._address}:${this._port}/facts?${params}`);
-      return await response.json();
+      const response = await fetch(
+        `http://${this._address}:${this._port}/facts?${params}`
+      );
+      return await response.json()
     };
     const results = {
-      async do(callbackFn) {
+      async do (callbackFn) {
         for (let solution of await solutions()) {
           for (let name in solution) {
             // force serialization and deserialization to simulate going over the network
@@ -478,57 +479,67 @@ class RemoteClient extends AbstractClient {
           }
           await callbackFn(solution);
         }
-        return results;
+        return results
       },
-      async count() {
-        return (await solutions()).length;
+      async count () {
+        return (await solutions()).length
       },
-      async isEmpty() {
-        return (await solutions()).length === 0;
+      async isEmpty () {
+        return (await solutions()).length === 0
       },
-      async isNotEmpty() {
-        return (await solutions()).length > 0;
+      async isNotEmpty () {
+        return (await solutions()).length > 0
       }
     };
-    return results;
+    return results
   }
 
-  async flushChanges() {
+  async flushChanges () {
     const retractions = this._retracts;
     const assertions = this._asserts;
     this._retracts = [];
     this._asserts = [];
     const params =
-        'clientId=' + this._id + '&' +
-        'retractions=' + JSON.stringify(retractions) + '&' +
-        'assertions=' + JSON.stringify(assertions);
+      'clientId=' +
+      this._id +
+      '&' +
+      'retractions=' +
+      JSON.stringify(retractions) +
+      '&' +
+      'assertions=' +
+      JSON.stringify(assertions);
     const response = await fetch(
-        `http://${this._address}:${this._port}/facts?${params}`,
-        {method: 'PUT'});
-    return await response.json();
+      `http://${this._address}:${this._port}/facts?${params}`,
+      { method: 'PUT' }
+    );
+    return await response.json()
   }
 
-  async immediatelyRetractEverythingAbout(name) {
+  async immediatelyRetractEverythingAbout (name) {
     const response = await fetch(
-        `http://${this._address}:${this._port}/facts?clientId=${this._id}&name=${name}`,
-        {method: 'DELETE'});
-    return await response.json();
+      `http://${this._address}:${this._port}/facts?clientId=${
+        this._id
+      }&name=${name}`,
+      { method: 'DELETE' }
+    );
+    return await response.json()
   }
 
-  async immediatelyRetractEverythingAssertedByMe() {
+  async immediatelyRetractEverythingAssertedByMe () {
     const response = await fetch(
-        `http://${this._address}:${this._port}/facts?clientId=${this._id}`,
-        {method: 'DELETE'});
-    return await response.json();
+      `http://${this._address}:${this._port}/facts?clientId=${this._id}`,
+      { method: 'DELETE' }
+    );
+    return await response.json()
   }
 
-  async getAllFacts() {
+  async getAllFacts () {
     const response = await fetch(`http://${this._address}:${this._port}/facts`);
-    return await response.json();
+    return await response.json()
   }
 
-  toString() {
-    return `[RemoteClient ${this._address}:${this._port}, ${this._id}]`;
+  toString () {
+    return `[RemoteClient ${this._address}:${this._port}, ${this._id}]`
   }
 }
 

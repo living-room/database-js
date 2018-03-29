@@ -1,8 +1,10 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.RoomDB = factory());
-}(this, (function () { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('events')) :
+	typeof define === 'function' && define.amd ? define(['events'], factory) :
+	(global.RoomDB = factory(global.EventEmitter));
+}(this, (function (EventEmitter) { 'use strict';
+
+EventEmitter = EventEmitter && EventEmitter.hasOwnProperty('default') ? EventEmitter['default'] : EventEmitter;
 
 const ohm = require('ohm-js');
 
@@ -65,40 +67,40 @@ const grammar = ohm.grammar(`
 `);
 
 const semantics = grammar.createSemantics().addOperation('parse', {
-  factOrPattern(terms) {
-    return terms.parse();
+  factOrPattern (terms) {
+    return terms.parse()
   },
-  id(_, cs) {
-    return {id: cs.sourceString};
+  id (_, cs) {
+    return { id: cs.sourceString }
   },
-  value_true(_) {
-    return {value: true};
+  value_true (_) {
+    return { value: true }
   },
-  value_false(_) {
-    return {value: false};
+  value_false (_) {
+    return { value: false }
   },
-  value_null(_) {
-    return {value: null};
+  value_null (_) {
+    return { value: null }
   },
-  variable(_, cs) {
-    return {variable: cs.sourceString};
+  variable (_, cs) {
+    return { variable: cs.sourceString }
   },
-  wildcard(_) {
-    return {wildcard: true};
+  wildcard (_) {
+    return { wildcard: true }
   },
-  hole(_) {
-    return {hole: true};
+  hole (_) {
+    return { hole: true }
   },
-  word_nonspace(_) {
-    return {word: this.sourceString};
+  word_nonspace (_) {
+    return { word: this.sourceString }
   },
-  word_space(_) {
-    return {word: ' '};
+  word_space (_) {
+    return { word: ' ' }
   },
-  number(_1, _2, _3) {
-    return {value: parseFloat(this.sourceString)};
+  number (_1, _2, _3) {
+    return { value: parseFloat(this.sourceString) }
   },
-  string(_oq, cs, _cq) {
+  string (_oq, cs, _cq) {
     const chars = [];
     let idx = 0;
     cs = cs.parse();
@@ -107,82 +109,87 @@ const semantics = grammar.createSemantics().addOperation('parse', {
       if (c === '\\' && idx < cs.length) {
         c = cs[idx++];
         switch (c) {
-          case 'n': c = '\n'; break;
-          case 't': c = '\t'; break;
-          default: idx--;
+          case 'n':
+            c = '\n';
+            break
+          case 't':
+            c = '\t';
+            break
+          default:
+            idx--;
         }
       }
       chars.push(c);
     }
-    return {value: chars.join('')};
+    return { value: chars.join('') }
   },
-  _terminal() {
-    return this.sourceString;
+  _terminal () {
+    return this.sourceString
   }
 });
 
-function parse(str, optRule) {
+function parse (str, optRule) {
   const rule = optRule || 'factOrPattern';
   const matchResult = grammar.match(str.trim(), rule);
   if (matchResult.succeeded()) {
-    return semantics(matchResult).parse();
+    return semantics(matchResult).parse()
   } else {
-    throw new Error(`invalid ${rule}: ${str}`);
+    throw new Error(`invalid ${rule}: ${str}`)
   }
 }
 
 const MAX_PARSE_CACHE_SIZE = 1000;
 
 class AbstractClient {
-  constructor(id) {
+  constructor (id) {
     this._id = id;
     this._parseCache = new Map();
     this._asserts = [];
     this._retracts = [];
   }
 
-  assert(factString, ...fillerValues) {
+  assert (factString, ...fillerValues) {
     const fact = this._toJSONFactOrPattern(factString, ...fillerValues);
     this._asserts.push(fact);
   }
 
-  retract(patternString, ...fillerValues) {
+  retract (patternString, ...fillerValues) {
     const pattern = this._toJSONFactOrPattern(patternString, ...fillerValues);
     this._retracts.push(pattern);
   }
 
-  async flushChanges() {
-    throw new Error('subclass responsibility');
+  async flushChanges () {
+    throw new Error('subclass responsibility')
   }
 
-  async immediatelyAssert(factString, ...fillerValues) {
+  async immediatelyAssert (factString, ...fillerValues) {
     this.assert(factString, ...fillerValues);
     await this.flushChanges();
   }
 
-  async immediatelyRetract(patternString, ...fillerValues) {
+  async immediatelyRetract (patternString, ...fillerValues) {
     this.retract(patternString, ...fillerValues);
     await this.flushChanges();
   }
 
-  async immediatelyRetractEverythingAbout(name) {
-    throw new Error('subclass responsibility');
+  async immediatelyRetractEverythingAbout (name) {
+    throw new Error('subclass responsibility')
   }
 
-  async immediatelyRetractEverythingAssertedByMe() {
-    throw new Error('subclass responsibility');
+  async immediatelyRetractEverythingAssertedByMe () {
+    throw new Error('subclass responsibility')
   }
 
-  async getAllFacts() {
-    throw new Error('subclass responsibility');
+  async getAllFacts () {
+    throw new Error('subclass responsibility')
   }
 
-  _toJSONFactOrPattern(factOrPatternString, ...fillerValues) {
+  _toJSONFactOrPattern (factOrPatternString, ...fillerValues) {
     if (arguments.length === 0) {
-      throw new Error('not enough arguments!');
+      throw new Error('not enough arguments!')
     }
     if (typeof factOrPatternString !== 'string') {
-      throw new Error('factOrPatternString must be a string!');
+      throw new Error('factOrPatternString must be a string!')
     }
     let terms = this._parse(factOrPatternString);
     if (fillerValues.length > 0) {
@@ -192,273 +199,277 @@ class AbstractClient {
       const term = terms[idx];
       if (term.hasOwnProperty('hole')) {
         if (fillerValues.length === 0) {
-          throw new Error('not enough filler values!');
+          throw new Error('not enough filler values!')
         }
         terms[idx] = this._toJSONTerm(fillerValues.shift());
       }
     }
     if (fillerValues.length > 0) {
-      throw new Error('too many filler values!');
+      throw new Error('too many filler values!')
     }
-    return terms;
+    return terms
   }
 
-  _toJSONTerm(value) {
-    return {value: value};
+  _toJSONTerm (value) {
+    return { value: value }
   }
 
-  _parse(factOrPatternString) {
+  _parse (factOrPatternString) {
     if (this._parseCache.has(factOrPatternString)) {
-      return this._parseCache.get(factOrPatternString);
+      return this._parseCache.get(factOrPatternString)
     } else {
       this._clearParseCacheIfTooBig();
       const terms = parse(factOrPatternString);
       this._parseCache.set(factOrPatternString, terms);
-      return terms;
+      return terms
     }
   }
 
-  _clearParseCacheIfTooBig() {
+  _clearParseCacheIfTooBig () {
     if (this._parseCache.size > MAX_PARSE_CACHE_SIZE) {
       this.clearParseCache();
     }
   }
 
-  clearParseCache() {
+  clearParseCache () {
     this._parseCache.clear();
   }
 }
 
 class Term {
-  toString() {
-    throw new Error('subclass responsibility');
+  toString () {
+    throw new Error('subclass responsibility')
   }
 
-  toJSON() {
-    throw new Error('subclass responsibility');
+  toJSON () {
+    throw new Error('subclass responsibility')
   }
 
-  toRawValue() {
-    throw new Error('subclass responsibility');
+  toRawValue () {
+    throw new Error('subclass responsibility')
   }
 
-  match(that, env) {
-    throw new Error('subclass responsibility');
+  match (that, env) {
+    throw new Error('subclass responsibility')
   }
 }
 
 Term.fromJSON = json => {
   if (json.hasOwnProperty('id')) {
-    return new Id(json.id);
+    return new Id(json.id)
   } else if (json.hasOwnProperty('word')) {
-    return new Word(json.word);
+    return new Word(json.word)
   } else if (json.hasOwnProperty('value')) {
-    return new Value(json.value);
+    return new Value(json.value)
   } else if (json.hasOwnProperty('blobRef')) {
-    return new BlobRef(json.blobRef);
+    return new BlobRef(json.blobRef)
   } else if (json.hasOwnProperty('variable')) {
-    return new Variable(json.variable);
+    return new Variable(json.variable)
   } else if (json.hasOwnProperty('wildcard')) {
-    return new Wildcard();
+    return new Wildcard()
   } else if (json.hasOwnProperty('hole')) {
-    return new Hole();
+    return new Hole()
   } else {
-    throw new Error('unrecognized JSON term: ' + JSON.stringify(json));
+    throw new Error('unrecognized JSON term: ' + JSON.stringify(json))
   }
 };
 
 class Id extends Term {
-  constructor(name) {
+  constructor (name) {
     super();
     this.name = name;
   }
 
-  toString() {
-    return '#' + this.name;
+  toString () {
+    return '#' + this.name
   }
 
-  toJSON() {
-    return {id: this.name};
+  toJSON () {
+    return { id: this.name }
   }
 
-  toRawValue() {
-    return this;
+  toRawValue () {
+    return this
   }
 
-  match(that, env) {
-    return that instanceof Id && this.name === that.name ?
-        env :
-        null;
+  match (that, env) {
+    return that instanceof Id && this.name === that.name ? env : null
   }
 }
 
 class Word extends Term {
-  constructor(value) {
+  constructor (value) {
     super();
     this.value = value;
   }
 
-  toString() {
-    return this.value;
+  toString () {
+    return this.value
   }
 
-  toJSON() {
-    return {word: this.value};
+  toJSON () {
+    return { word: this.value }
   }
 
-  toRawValue() {
-    return this;
+  toRawValue () {
+    return this
   }
 
-  match(that, env) {
-    return that instanceof Word && this.value === that.value ?
-        env :
-        null;
+  match (that, env) {
+    return that instanceof Word && this.value === that.value ? env : null
   }
 }
 
 class Value extends Term {
-  constructor(value) {
+  constructor (value) {
     super();
     this.value = value;
   }
 
-  toString() {
-    return JSON.stringify(this.value);
+  toString () {
+    return JSON.stringify(this.value)
   }
 
-  toJSON() {
-    return {value: this.value};
+  toJSON () {
+    return { value: this.value }
   }
 
-  toRawValue() {
-    return this.value;
+  toRawValue () {
+    return this.value
   }
 
-  match(that, env) {
-    return that instanceof Value && this.value === that.value ?
-        env :
-        null;
+  match (that, env) {
+    return that instanceof Value && this.value === that.value ? env : null
   }
 }
 
 class BlobRef extends Term {
-  constructor(id) {
+  constructor (id) {
     super();
     this.id = id;
   }
 
-  toString() {
-    return '@' + this.id;
+  toString () {
+    return '@' + this.id
   }
 
-  toJSON() {
-    return {blobRef: this.id};
+  toJSON () {
+    return { blobRef: this.id }
   }
 
-  toRawValue() {
-    return this;
+  toRawValue () {
+    return this
   }
 
-  match(that, env) {
-    return that instanceof BlobRef && this.id === that.id ?
-        env :
-        null;
+  match (that, env) {
+    return that instanceof BlobRef && this.id === that.id ? env : null
   }
 }
 
 class Variable extends Term {
-  constructor(name) {
+  constructor (name) {
     super();
     this.name = name;
   }
 
-  toString() {
-    return '$' + this.name;
+  toString () {
+    return '$' + this.name
   }
 
-  toJSON() {
-    return {variable: this.name};
+  toJSON () {
+    return { variable: this.name }
   }
 
-  toRawValue() {
-    throw new Error('Variable\'s toRawValue() should never be called!');
+  toRawValue () {
+    throw new Error("Variable's toRawValue() should never be called!")
   }
 
-  match(that, env) {
+  match (that, env) {
     if (env[this.name] === undefined) {
       env[this.name] = that;
-      return env;
+      return env
     } else {
-      return env[this.name].match(that, env);
+      return env[this.name].match(that, env)
     }
   }
 }
 
 class Wildcard extends Term {
-  constructor() {
+  constructor () {
     super();
     // no-op
   }
 
-  toString() {
-    return '$';
+  toString () {
+    return '$'
   }
 
-  toJSON() {
-    return {wildcard: true};
+  toJSON () {
+    return { wildcard: true }
   }
 
-  toRawValue() {
-    throw new Error('Wildcard\'s toRawValue() should never be called!');
+  toRawValue () {
+    throw new Error("Wildcard's toRawValue() should never be called!")
   }
 
-  match(that, env) {
-    return env;
+  match (that, env) {
+    return env
   }
 }
 
 class Hole extends Term {
-  constructor() {
+  constructor () {
     super();
     // no-op
   }
 
-  toString() {
-    return '_';
+  toString () {
+    return '_'
   }
 
-  toJSON() {
-    return {hole: true};
+  toJSON () {
+    return { hole: true }
   }
 
-  toRawValue() {
-    throw new Error('Hole\'s toRawValue() should never be called!');
+  toRawValue () {
+    throw new Error("Hole's toRawValue() should never be called!")
   }
 
-  match(that, env) {
-    throw new Error('Hole\'s match() should never be called!');
+  match (that, env) {
+    throw new Error("Hole's match() should never be called!")
   }
 }
 
 class LocalClient extends AbstractClient {
-  constructor(db, id) {
+  constructor (db, id) {
     super(id);
     this._db = db;
   }
 
-  select(...patternStrings) {
-    const patterns = patternStrings.map(p =>
-      p instanceof Array ?
-          this._toJSONFactOrPattern(...p) :
-          this._toJSONFactOrPattern(p));
+  /**
+   * @param [`selectstring`, `another`] select string
+   * @param callback callback
+   */
+
+  subscribe (patternStrings, callback) {
+    const jsonPatterns = patternStrings.map(patternString => this._toJSONFactOrPattern(patternString));
+    return this._db.on(JSON.stringify(jsonPatterns), callback)
+  }
+
+  select (...patternStrings) {
+    const patterns = patternStrings.map(
+      p =>
+        p instanceof Array
+          ? this._toJSONFactOrPattern(...p)
+          : this._toJSONFactOrPattern(p)
+    );
     const solutions = this._db.select(...patterns);
     const results = {
-      async doAll(callbackFn) {
+      async doAll (callbackFn) {
         await callbackFn(solutions);
-        return results;
+        return results
       },
-      async do(callbackFn) {
+      async do (callbackFn) {
         for (let solution of solutions) {
           for (let name in solution) {
             // force serialization and deserialization to simulate going over the network
@@ -467,100 +478,116 @@ class LocalClient extends AbstractClient {
           }
           await callbackFn(solution);
         }
-        return results;
+        return results
       },
-      async count() {
-        return solutions.length;
+      async count () {
+        return solutions.length
       },
-      async isEmpty() {
-        return solutions.length === 0;
+      async isEmpty () {
+        return solutions.length === 0
       },
-      async isNotEmpty() {
-        return solutions.length > 0;
+      async isNotEmpty () {
+        return solutions.length > 0
       }
     };
-    return results;
+    return results
   }
 
-  async flushChanges() {
+  async flushChanges () {
     this._retracts.forEach(pattern => this._db.retract(this._id, pattern));
     this._retracts = [];
     this._asserts.forEach(fact => this._db.assert(this._id, fact));
     this._asserts = [];
   }
 
-  async immediatelyRetractEverythingAbout(name) {
-    return this._db.retractEverythingAbout(this._id, name);
+  async immediatelyRetractEverythingAbout (name) {
+    return this._db.retractEverythingAbout(this._id, name)
   }
 
-  async immediatelyRetractEverythingAssertedByMe() {
-    return this._db.retractEverythingAssertedBy(this._id);
+  async immediatelyRetractEverythingAssertedByMe () {
+    return this._db.retractEverythingAssertedBy(this._id)
   }
 
-  async getAllFacts() {
-    return this._db.getAllFacts();
+  async getAllFacts () {
+    return this._db.getAllFacts()
   }
 
-  toString() {
-    return `[LocalClient ${this._id}]`;
+  toString () {
+    return `[LocalClient ${this._id}]`
   }
 }
 
 module.exports = LocalClient;
 
 class Fact {
-  constructor(terms) {
+  constructor (terms) {
     this.terms = terms;
   }
 
-  hasVariablesOrWildcards() {
-    return this.terms.some(term =>
-        term instanceof Variable ||
-        term instanceof Wildcard);
+  hasVariablesOrWildcards () {
+    return this.terms.some(
+      term => term instanceof Variable || term instanceof Wildcard
+    )
   }
 
-  match(that, env) {
+  match (that, env) {
     if (this.terms.length !== that.terms.length) {
-      return null;
+      return null
     }
     for (let idx = 0; idx < this.terms.length; idx++) {
       const thisTerm = this.terms[idx];
       const thatTerm = that.terms[idx];
       if (!thisTerm.match(thatTerm, env)) {
-        return null;
+        return null
       }
     }
-    return env;
+    return env
   }
 
-  toString() {
-    return this.terms.map(term => term.toString()).join('');
+  toString () {
+    return this.terms.map(term => term.toString()).join('')
   }
 }
 
-Fact.fromJSON =
-    jsonTerms => new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)));
+Fact.fromJSON = jsonTerms => {
+  return new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)))
+};
 
-function flatten(obj) {
+function flatten (obj) {
   for (let prop in obj) {
     obj[prop] = obj[prop];
   }
-  return obj;
+  return obj
 }
 
-class RoomDB {
-  constructor() {
+function difference (setA, setB) {
+  let difference = setA;
+  for (let elem of setB) {
+    difference.delete(elem);
+  }
+  return difference
+}
+
+class RoomDB extends EventEmitter {
+  constructor () {
+    super();
     this._factMap = new Map();
+    this._subscriptions = new Set();
+
+    this.on('newListener', (event, _) => {
+      const parsed = JSON.parse(event);
+      this._subscriptions.add(parsed);
+    });
   }
 
-  select(...jsonPatterns) {
+  select (...jsonPatterns) {
     const patterns = jsonPatterns.map(jsonPattern => Fact.fromJSON(jsonPattern));
     const solutions = [];
     this._collectSolutions(patterns, Object.create(null), solutions);
-    return solutions.map(flatten);
+    return solutions.map(flatten)
   }
 
-  _collectSolutions(patterns, env, solutions) {
+  _collectSolutions (patterns, env, solutions) {
     if (patterns.length === 0) {
       solutions.push(env);
     } else {
@@ -574,56 +601,118 @@ class RoomDB {
     }
   }
 
-  assert(clientId, factJSON) {
+  _emitChanges (fn) {
+    const subscriptions = this._subscriptions;
+    /**
+     * beforeFacts: {
+     *  '$name is at $x, $y': Set { } 
+     * }
+     */
+    const beforeFacts = new Map();
+    subscriptions.forEach(pattern => {
+      const solutions = this.select(...pattern);
+      beforeFacts.set(pattern, new Set(solutions));
+    });
+    // assert('gorog is at 1, 2')
+    fn();
+    
+    /**
+     * afterFacts: {
+     *  '$name is at $x, $y': Set{ {name: 'gorog', x: 1, y: 2} }
+     * }
+     */
+    const afterFacts = new Map();
+    subscriptions.forEach(pattern => {
+      const solutions = this.select(...pattern);
+      afterFacts.set(pattern, new Set(solutions));
+    });
+    /**
+     * {
+     *    assertions: [ {name: 'gorog', x: 1, y: 2} ]
+     * }
+     */
+    subscriptions.forEach(pattern => {
+      const before = beforeFacts.get(pattern);
+      const after = afterFacts.get(pattern);
+      const assertions = Array.from(difference(after, before));
+      const retractions = Array.from(difference(before, after));
+
+      if (assertions.length + retractions.length) {
+        this.emit(JSON.stringify(pattern), { pattern, assertions, retractions });
+      }
+    });
+  }
+
+  assert (...args) {
+    const assert = this._assert.bind(this, ...args);
+    this._emitChanges(assert);
+  }
+
+  _assert (clientId, factJSON) {
+    if (factJSON === undefined) {
+      throw new Error('factJSON is undefined')
+    }
     const fact = Fact.fromJSON(factJSON);
+
     if (fact.hasVariablesOrWildcards()) {
-      throw new Error('cannot assert a fact that has variables or wildcards!');
+      throw new Error('cannot assert a fact that has variables or wildcards!')
     }
     fact.asserter = clientId;
     this._factMap.set(fact.toString(), fact);
   }
 
-  retract(clientId, factJSON) {
+  retract (...args) {
+    const retract = this._retract.bind(this, ...args);
+    this._emitChanges(retract);
+  }
+
+  _retract (clientId, factJSON) {
     const pattern = Fact.fromJSON(factJSON);
     if (pattern.hasVariablesOrWildcards()) {
-      const factsToRetract =
-          this._facts.filter(fact => pattern.match(fact, Object.create(null)));
+      const factsToRetract = this._facts.filter(fact =>
+        pattern.match(fact, Object.create(null))
+      );
       factsToRetract.forEach(fact => this._factMap.delete(fact.toString()));
-      return factsToRetract.length;
+      return factsToRetract.length
     } else {
-      return this._factMap.delete(pattern.toString()) ? 1 : 0;
+      return this._factMap.delete(pattern.toString()) ? 1 : 0
     }
   }
 
-  retractEverythingAbout(clientId, name) {
+  retractEverythingAbout (clientId, name) {
     const id = new Id(name);
     const emptyEnv = Object.create(null);
-    const factsToRetract =
-        this._facts.filter(fact => fact.terms.some(term => id.match(term, emptyEnv)));
+    const factsToRetract = this._facts.filter(fact =>
+      fact.terms.some(term => id.match(term, emptyEnv))
+    );
     factsToRetract.forEach(fact => this._factMap.delete(fact.toString()));
-    return factsToRetract.length;
+    return factsToRetract.length
   }
 
-  retractEverythingAssertedBy(clientId) {
-    const factsToRetract = this._facts.filter(fact => fact.asserter === clientId);
+  retractEverythingAssertedBy (clientId) {
+    const factsToRetract = this._facts.filter(
+      fact => fact.asserter === clientId
+    );
     factsToRetract.forEach(fact => this._factMap.delete(fact.toString()));
-    return factsToRetract.length;
+    return factsToRetract.length
   }
 
-  get _facts() {
-    return Array.from(this._factMap.values());
+  get _facts () {
+    return Array.from(this._factMap.values())
   }
 
-  getAllFacts() {
-    return this._facts.map(fact => fact.toString());
+  getAllFacts () {
+    return this._facts.map(fact => fact.toString())
   }
 
-  toString() {
-    return this._facts.map(fact => '<' + fact.asserter + '> ' + fact.toString()).join('\n');
+  toString () {
+    return this._facts
+      .map(fact => '<' + fact.asserter + '> ' + fact.toString())
+      .join('\n')
   }
 
-  client(id = 'local-client') {
-    return new LocalClient(this, id);
+  client (id = 'local-client') {
+    return new LocalClient(this, id)
   }
 }
 
