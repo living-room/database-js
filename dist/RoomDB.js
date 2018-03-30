@@ -613,7 +613,7 @@ class RoomDB extends EventEmitter {
     subscriptions.forEach(jsonPatternString => {
       const jsonPatterns = JSON.parse(jsonPatternString);
       const solutions = this.select(...jsonPatterns);
-      beforeFacts.set(jsonPatternString, new Set(solutions));
+      beforeFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)));
     });
     // assert('gorog is at 1, 2')
     fn();
@@ -627,7 +627,7 @@ class RoomDB extends EventEmitter {
     subscriptions.forEach(jsonPatternString => {
       const jsonPatterns = JSON.parse(jsonPatternString);
       const solutions = this.select(...jsonPatterns);
-      afterFacts.set(jsonPatternString, new Set(solutions));
+      afterFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)));
     });
     /**
      * {
@@ -637,8 +637,10 @@ class RoomDB extends EventEmitter {
     subscriptions.forEach(jsonPatternString => {
       const before = beforeFacts.get(jsonPatternString);
       const after = afterFacts.get(jsonPatternString);
-      const assertions = Array.from(difference(after, before));
-      const retractions = Array.from(difference(before, after));
+      
+      const assertions = Array.from(difference(after, before)).map(JSON.parse);
+      const retractions = Array.from(difference(before, after)).map(JSON.parse);
+
 
       if (assertions.length + retractions.length) {
         this.emit(jsonPatternString, { pattern: jsonPatternString, assertions, retractions });
