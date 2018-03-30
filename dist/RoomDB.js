@@ -575,9 +575,8 @@ class RoomDB extends EventEmitter {
     this._factMap = new Map();
     this._subscriptions = new Set();
 
-    this.on('newListener', (event, _) => {
-      const parsed = JSON.parse(event);
-      this._subscriptions.add(parsed);
+    this.on('newListener', (jsonPatternsString, _) => {
+      this._subscriptions.add(jsonPatternsString);
       console.log(`now there are ${this._subscriptions.size} subscriptions!`);
     });
   }
@@ -611,9 +610,10 @@ class RoomDB extends EventEmitter {
      * }
      */
     const beforeFacts = new Map();
-    subscriptions.forEach(pattern => {
-      const solutions = this.select(...pattern);
-      beforeFacts.set(pattern, new Set(solutions));
+    subscriptions.forEach(jsonPatternString => {
+      const jsonPatterns = JSON.parse(jsonPatternString);
+      const solutions = this.select(...jsonPatterns);
+      beforeFacts.set(jsonPatternString, new Set(solutions));
     });
     // assert('gorog is at 1, 2')
     fn();
@@ -624,23 +624,24 @@ class RoomDB extends EventEmitter {
      * }
      */
     const afterFacts = new Map();
-    subscriptions.forEach(pattern => {
-      const solutions = this.select(...pattern);
-      afterFacts.set(pattern, new Set(solutions));
+    subscriptions.forEach(jsonPatternString => {
+      const jsonPatterns = JSON.parse(jsonPatternString);
+      const solutions = this.select(...jsonPatterns);
+      afterFacts.set(jsonPatternString, new Set(solutions));
     });
     /**
      * {
      *    assertions: [ {name: 'gorog', x: 1, y: 2} ]
      * }
      */
-    subscriptions.forEach(pattern => {
-      const before = beforeFacts.get(pattern);
-      const after = afterFacts.get(pattern);
+    subscriptions.forEach(jsonPatternString => {
+      const before = beforeFacts.get(jsonPatternString);
+      const after = afterFacts.get(jsonPatternString);
       const assertions = Array.from(difference(after, before));
       const retractions = Array.from(difference(before, after));
 
       if (assertions.length + retractions.length) {
-        this.emit(JSON.stringify(pattern), { pattern, assertions, retractions });
+        this.emit(jsonPatternString, { pattern: jsonPatternString, assertions, retractions });
       }
     });
   }
