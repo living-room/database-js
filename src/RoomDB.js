@@ -29,6 +29,7 @@ export default class RoomDB extends EventEmitter {
     this.on('newListener', (event, _) => {
       const parsed = JSON.parse(event)
       this._subscriptions.add(parsed)
+      console.log(`now there are ${this._subscriptions.size} subscriptions!`)
     })
   }
 

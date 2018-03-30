@@ -451,9 +451,8 @@ class LocalClient extends AbstractClient {
    * @param callback callback
    */
 
-  subscribe (patternStrings, callback) {
-    console.dir(patternStrings)
-    const patterns = JSON.parse(patternStrings)
+  subscribe (patterns, callback) {
+    if (typeof patterns === 'string') patterns = [patterns];
     const jsonPatterns = patterns.map(patternString => this._toJSONFactOrPattern(patternString));
     return this._db.on(JSON.stringify(jsonPatterns), callback)
   }
@@ -579,6 +578,7 @@ class RoomDB extends EventEmitter {
     this.on('newListener', (event, _) => {
       const parsed = JSON.parse(event);
       this._subscriptions.add(parsed);
+      console.log(`now there are ${this._subscriptions.size} subscriptions!`);
     });
   }
 

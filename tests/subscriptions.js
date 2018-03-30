@@ -31,7 +31,7 @@ test('retractions are listened to', async t => {
   let emissions = 0
 
   const subscription = new Promise((resolve, reject) => {
-    client.subscribe(['$name is a $class at $x, $y'], ({assertions, retractions, selections}) => {
+    client.subscribe('$name is a $class at $x, $y', ({assertions, retractions, selections}) => {
       emissions++
       if (emissions === 2) {
         const gorogFact = retractions[0]
