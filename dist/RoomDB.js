@@ -452,7 +452,9 @@ class LocalClient extends AbstractClient {
    */
 
   subscribe (patternStrings, callback) {
-    const jsonPatterns = patternStrings.map(patternString => this._toJSONFactOrPattern(patternString));
+    console.dir(patternStrings)
+    const patterns = JSON.parse(patternStrings)
+    const jsonPatterns = patterns.map(patternString => this._toJSONFactOrPattern(patternString));
     return this._db.on(JSON.stringify(jsonPatterns), callback)
   }
 
