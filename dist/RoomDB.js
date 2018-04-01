@@ -577,7 +577,6 @@ class RoomDB extends EventEmitter {
 
     this.on('newListener', (jsonPatternsString, _) => {
       this._subscriptions.add(jsonPatternsString);
-      console.log(`now there are ${this._subscriptions.size} subscriptions!`);
     });
   }
 
@@ -606,7 +605,7 @@ class RoomDB extends EventEmitter {
     const subscriptions = this._subscriptions;
     /**
      * beforeFacts: {
-     *  '$name is at $x, $y': Set { } 
+     *  '$name is at $x, $y': Set { }
      * }
      */
     const beforeFacts = new Map();
@@ -617,7 +616,7 @@ class RoomDB extends EventEmitter {
     });
     // assert('gorog is at 1, 2')
     fn();
-    
+
     /**
      * afterFacts: {
      *  '$name is at $x, $y': Set{ {name: 'gorog', x: 1, y: 2} }
@@ -637,7 +636,7 @@ class RoomDB extends EventEmitter {
     subscriptions.forEach(jsonPatternString => {
       const before = beforeFacts.get(jsonPatternString);
       const after = afterFacts.get(jsonPatternString);
-      
+
       const assertions = Array.from(difference(after, before)).map(JSON.parse);
       const retractions = Array.from(difference(before, after)).map(JSON.parse);
 
