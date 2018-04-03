@@ -453,7 +453,9 @@ class LocalClient extends AbstractClient {
 
   subscribe (patterns, callback) {
     if (typeof patterns === 'string') patterns = [patterns];
-    const jsonPatterns = patterns.map(patternString => this._toJSONFactOrPattern(patternString));
+    const jsonPatterns = patterns.map(patternString =>
+      this._toJSONFactOrPattern(patternString)
+    );
     return this._db.on(JSON.stringify(jsonPatterns), callback)
   }
 
@@ -614,6 +616,7 @@ class RoomDB extends EventEmitter {
       const solutions = this.select(...jsonPatterns);
       beforeFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)));
     });
+
     // assert('gorog is at 1, 2')
     fn();
 
@@ -628,6 +631,7 @@ class RoomDB extends EventEmitter {
       const solutions = this.select(...jsonPatterns);
       afterFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)));
     });
+
     /**
      * {
      *    assertions: [ {name: 'gorog', x: 1, y: 2} ]
@@ -640,9 +644,12 @@ class RoomDB extends EventEmitter {
       const assertions = Array.from(difference(after, before)).map(JSON.parse);
       const retractions = Array.from(difference(before, after)).map(JSON.parse);
 
-
       if (assertions.length + retractions.length) {
-        this.emit(jsonPatternString, { pattern: jsonPatternString, assertions, retractions });
+        this.emit(jsonPatternString, {
+          pattern: jsonPatternString,
+          assertions,
+          retractions
+        });
       }
     });
   }

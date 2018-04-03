@@ -16,7 +16,9 @@ export default class LocalClient extends AbstractClient {
 
   subscribe (patterns, callback) {
     if (typeof patterns === 'string') patterns = [patterns]
-    const jsonPatterns = patterns.map(patternString => this._toJSONFactOrPattern(patternString))
+    const jsonPatterns = patterns.map(patternString =>
+      this._toJSONFactOrPattern(patternString)
+    )
     return this._db.on(JSON.stringify(jsonPatterns), callback)
   }
 
