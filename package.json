@@ -1,17 +1,17 @@
 {
   "name": "living-room-database",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A Datalog-style database that enables programmers to represent facts in natural language.",
   "main": "dist/RoomDB.js",
   "dependencies": {
     "browserify": "^15.2.0",
     "node-fetch": "^1.7.3",
     "ohm-js": "^0.14.0",
-    "prettier-standard": "^8.0.0",
+    "prettier-standard": "^8.0.1",
     "restify": "^6.3.4",
     "restify-cors-middleware": "^1.1.0",
     "restify-errors": "^5.0.0",
-    "uglify-es": "^3.3.7"
+    "uglify-es": "^3.3.10"
   },
   "devDependencies": {
     "ava": "^0.25.0",
