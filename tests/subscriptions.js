@@ -8,7 +8,7 @@ test('assertions are listened to', async t => {
   const client = room.client()
 
   const subscription = new Promise((resolve, reject) => {
-    client.subscribe(['$name is a $class at $x, $y'], ({assertions, retractions, selections}) => {
+    client.subscribe('$name is a $class at $x, $y', ({assertions, retractions, selections}) => {
       const gorogFact = assertions[0]
       t.deepEqual(retractions, [])
       t.deepEqual(gorogFact.name.word, 'gorog')
@@ -31,9 +31,10 @@ test('retractions are listened to', async t => {
   let emissions = 0
 
   const subscription = new Promise((resolve, reject) => {
-    client.subscribe('$name is a $class at $x, $y', ({assertions, retractions, selections}) => {
+    client.subscribe(['$name is a $class at $x, $y'], ({assertions, retractions, selections}) => {
       emissions++
       if (emissions === 2) {
+        t.is(retractions.length, 1)
         const gorogFact = retractions[0]
         t.deepEqual(assertions, [])
         t.deepEqual(gorogFact.name.word, 'gorog')

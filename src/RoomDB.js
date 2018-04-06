@@ -13,7 +13,7 @@ function flatten (obj) {
 }
 
 function difference (setA, setB) {
-  let difference = setA
+  let difference = new Set(setA)
   for (let elem of setB) {
     difference.delete(elem)
   }
@@ -65,7 +65,6 @@ export default class RoomDB extends EventEmitter {
       const solutions = this.select(...jsonPatterns)
       beforeFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)))
     })
-
     // assert('gorog is at 1, 2')
     fn()
 
@@ -80,7 +79,6 @@ export default class RoomDB extends EventEmitter {
       const solutions = this.select(...jsonPatterns)
       afterFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)))
     })
-
     /**
      * {
      *    assertions: [ {name: 'gorog', x: 1, y: 2} ]
@@ -92,7 +90,6 @@ export default class RoomDB extends EventEmitter {
 
       const assertions = Array.from(difference(after, before)).map(JSON.parse)
       const retractions = Array.from(difference(before, after)).map(JSON.parse)
-
       if (assertions.length + retractions.length) {
         this.emit(jsonPatternString, {
           pattern: jsonPatternString,
