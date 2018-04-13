@@ -28,6 +28,14 @@ export default class RoomDB extends EventEmitter {
 
     this.on('newListener', (jsonPatternsString, _) => {
       this._subscriptions.add(jsonPatternsString)
+      const jsonPatterns = JSON.parse(jsonPatternsString)
+      const assertions = this.select(...jsonPatterns)
+
+      this.emit(jsonPatternsString, {
+        pattern: jsonPatternsString,
+        assertions,
+        retractions: []
+      })
     })
   }
 
