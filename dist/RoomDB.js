@@ -577,14 +577,11 @@ class RoomDB extends EventEmitter {
     this._factMap = new Map();
     this._subscriptions = new Set();
 
-    this.on('newListener', (jsonPatternsString, _) => {
+    this.on('newListener', (jsonPatternsString, callback) => {
       this._subscriptions.add(jsonPatternsString);
-      const jsonPatterns = JSON.parse(jsonPatternsString);
-      const assertions = this.select(...jsonPatterns);
 
-      this.emit(jsonPatternsString, {
-        pattern: jsonPatternsString,
-        assertions,
+      callback({
+        assertions: this.select(...JSON.parse(jsonPatternsString)),
         retractions: []
       });
     });
