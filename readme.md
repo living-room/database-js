@@ -1,7 +1,11 @@
-# living-room-database
+# living-room database-js
 
-RoomDB is a Datalog-style database inspired by the implementation of the [Dynamicland](https://dynamicland.org/) project. It enables programmers to represent facts using natural language, with a syntax adapted from my [NL-Datalog project](https://github.com/harc/nl-datalog).
+living-room database-js is a Datalog-style database inspired by the implementation of the [Dynamicland][] project. It enables programmers to represent facts using natural language, with a syntax adapted from [alexwarth][]'s [NL-Datalog project][].
 
-It is based off of [RoomDB][] by alexwarth, but has diverged enough to be its own thing for now
+See [tests][] for examples of what can be done
 
-See tests for examples of what can be done
+[Dynamicland]: https://dynamiclang.org
+[NL-Datalog project]: https://github.com/harc/nl-datalog
+[alexwarth]: https://github.com/alexwarth
+[RoomDB]: https://github.com/alexwarth/RoomDB
+[tests]: ./tests
