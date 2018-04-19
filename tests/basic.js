@@ -1,5 +1,5 @@
 const test = require('ava')
-const RoomDB = require('../src/roomdb.js')
+const RoomDB = require('../src/roomdb')
 
 const gorogInitial = `#gorog is a barbarian at 40, 50`
 const gorogMoves = `#gorog is a barbarian at 99, 11`
