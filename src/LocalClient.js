@@ -1,9 +1,7 @@
-'use strict'
+const AbstractClient = require('./AbstractClient')
+const { Term } = require('./terms')
 
-import AbstractClient from './AbstractClient'
-import { Term } from './terms'
-
-export default class LocalClient extends AbstractClient {
+module.exports = class LocalClient extends AbstractClient {
   constructor (db, id) {
     super(id)
     this._db = db
@@ -82,5 +80,3 @@ export default class LocalClient extends AbstractClient {
     return `[LocalClient ${this._id}]`
   }
 }
-
-module.exports = LocalClient

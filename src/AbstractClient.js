@@ -1,10 +1,8 @@
-'use strict'
-
-import parse from './parse'
+const parse = require('@living-room/parser-js')
 
 const MAX_PARSE_CACHE_SIZE = 1000
 
-export default class AbstractClient {
+module.exports = class AbstractClient {
   constructor (id) {
     this._id = id
     this._parseCache = new Map()

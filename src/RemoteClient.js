@@ -1,8 +1,5 @@
-'use strict'
-
-import AbstractClient from './AbstractClient'
-import { Term } from './terms'
-import parse from './parse'
+const AbstractClient = require('./AbstractClient')
+const { Term } = require('./terms')
 
 // If fetch is not declared, load it from the node-fetch module.
 // (This makes it possible to run RemoteClient in the browser and in node-js.)

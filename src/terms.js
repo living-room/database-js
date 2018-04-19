@@ -1,5 +1,3 @@
-'use strict'
-
 class Term {
   toString () {
     throw new Error('subclass responsibility')
@@ -204,4 +202,4 @@ class Hole extends Term {
   }
 }
 
-export { Term, Id, Word, Value, BlobRef, Variable, Wildcard, Hole }
+module.exports = { Term, Id, Word, Value, BlobRef, Variable, Wildcard, Hole }

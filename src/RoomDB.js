@@ -1,9 +1,7 @@
-'use strict'
-
-import LocalClient from './LocalClient'
-import { Id } from './terms'
-import Fact from './Fact'
-import EventEmitter from 'events'
+const LocalClient = require('./LocalClient')
+const { Id } = require('./terms')
+const Fact = require('./Fact')
+const EventEmitter = require('events')
 
 function flatten (obj) {
   for (let prop in obj) {
@@ -20,7 +18,7 @@ function difference (setA, setB) {
   return difference
 }
 
-export default class RoomDB extends EventEmitter {
+module.exports = class RoomDB extends EventEmitter {
   constructor () {
     super()
     this._factMap = new Map()
