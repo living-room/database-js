@@ -23,8 +23,10 @@ module.exports = class RoomDB extends EventEmitter {
     super()
     this._factMap = new Map()
     this._subscriptions = new Set()
+    this._newListenerCount = 0
 
     this.on('newListener', (jsonPatternsString, callback) => {
+      console.log(`newListener called ${this._newListenerCount++} times, max ${this.getMaxListeners()}`)
       this._subscriptions.add(jsonPatternsString)
 
       callback({
