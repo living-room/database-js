@@ -5,6 +5,10 @@ module.exports = class LocalClient extends AbstractClient {
   constructor (db, id) {
     super(id)
     this._db = db
+
+    // TODO: If there's a way for clients to be destroyed, they need to .off() these listeners.
+    db.on('assert', changes => this.emit('assert', changes))
+    db.on('retract', changes => this.emit('retract', changes))
   }
 
   /**
@@ -17,7 +21,7 @@ module.exports = class LocalClient extends AbstractClient {
     const jsonPatterns = patterns.map(patternString =>
       this._toJSONFactOrPattern(patternString)
     )
-    return this._db.on(JSON.stringify(jsonPatterns), callback)
+    return this._db.on(`pattern:${JSON.stringify(jsonPatterns)}`, callback)
   }
 
   select (...patternStrings) {

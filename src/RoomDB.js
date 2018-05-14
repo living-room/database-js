@@ -25,8 +25,14 @@ module.exports = class RoomDB extends EventEmitter {
     this._subscriptions = new Set()
     this._newListenerCount = 0
 
-    this.on('newListener', (jsonPatternsString, callback) => {
-      console.log(`newListener called ${this._newListenerCount++} times, max ${this.getMaxListeners()}`)
+    this.on('newListener', (event, callback) => {
+      const patternMatch = event.match(/pattern:(.+)/)
+      if (!patternMatch) return
+      const jsonPatternsString = patternMatch[1]
+      console.log(
+        `newListener called ${this
+          ._newListenerCount++} times, max ${this.getMaxListeners()}`
+      )
       this._subscriptions.add(jsonPatternsString)
 
       callback({
@@ -123,6 +129,7 @@ module.exports = class RoomDB extends EventEmitter {
     const a = new Set()
     a.keys
     this._factMap.set(fact.toString(), fact)
+    this.emit('assert', fact.toString())
   }
 
   retract (...args) {
@@ -136,10 +143,18 @@ module.exports = class RoomDB extends EventEmitter {
       const factsToRetract = this._facts.filter(fact =>
         pattern.match(fact, Object.create(null))
       )
-      factsToRetract.forEach(fact => this._factMap.delete(fact.toString()))
+      factsToRetract.forEach(fact => {
+        this._factMap.delete(fact.toString())
+        this.emit('retract', pattern.toString())
+      })
       return factsToRetract.length
     } else {
-      return this._factMap.delete(pattern.toString()) ? 1 : 0
+      if (this._factMap.delete(pattern.toString())) {
+        this.emit('retract', pattern.toString())
+        return 1
+      } else {
+        return 0
+      }
     }
   }
 
