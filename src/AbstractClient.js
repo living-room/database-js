@@ -1,9 +1,11 @@
 const parse = require('@living-room/parser-js')
+const EventEmitter = require('events')
 
 const MAX_PARSE_CACHE_SIZE = 1000
 
-module.exports = class AbstractClient {
+module.exports = class AbstractClient extends EventEmitter {
   constructor (id) {
+    super()
     this._id = id
     this._parseCache = new Map()
     this._asserts = []
