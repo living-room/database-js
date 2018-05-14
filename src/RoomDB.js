@@ -102,7 +102,7 @@ module.exports = class RoomDB extends EventEmitter {
       const assertions = Array.from(difference(after, before)).map(JSON.parse)
       const retractions = Array.from(difference(before, after)).map(JSON.parse)
       if (assertions.length + retractions.length) {
-        this.emit(jsonPatternString, {
+        this.emit(`pattern:${jsonPatternString}`, {
           pattern: jsonPatternString,
           assertions,
           retractions
