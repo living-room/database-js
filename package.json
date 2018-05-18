@@ -1,6 +1,6 @@
 {
   "name": "@living-room/database-js",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A Datalog-style database that enables programmers to represent facts in natural language.",
   "main": "src/RoomDB.js",
   "dependencies": {
@@ -9,7 +9,7 @@
     "prettier-standard": "^8.0.1"
   },
   "devDependencies": {
-    "ava": "^0.25.0"
+    "ava": "^1.0.0-beta.4"
   },
   "repository": {
     "type": "git",
