@@ -1,6 +1,6 @@
 {
   "name": "@living-room/database-js",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "A Datalog-style database that enables programmers to represent facts in natural language.",
   "main": "src/RoomDB.js",
   "dependencies": {
