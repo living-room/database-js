@@ -25,14 +25,12 @@ module.exports = class RoomDB extends EventEmitter {
     this._subscriptions = new Set()
     this._newListenerCount = 0
 
+    // FIXME: clean up listeners
+    this.setMaxListeners(100)
     this.on('newListener', (event, callback) => {
       const patternMatch = event.match(/pattern:(.+)/)
       if (!patternMatch) return
       const jsonPatternsString = patternMatch[1]
-      console.log(
-        `newListener called ${this
-          ._newListenerCount++} times, max ${this.getMaxListeners()}`
-      )
       this._subscriptions.add(jsonPatternsString)
 
       callback({
