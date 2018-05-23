@@ -62,10 +62,11 @@ module.exports = class LocalClient extends AbstractClient {
   }
 
   async flushChanges () {
-    this._retracts.forEach(pattern => this._db.retract(this._id, pattern))
-    this._retracts = []
-    this._asserts.forEach(fact => this._db.assert(this._id, fact))
-    this._asserts = []
+    this._messages.forEach(message => {
+       if (message.assert) this._db.assert(this._id, message.assert)
+       if (message.retract) this._db.retract(this._id, message.retract)
+    })
+    this._messages = []
   }
 
   async immediatelyRetractEverythingAbout (name) {

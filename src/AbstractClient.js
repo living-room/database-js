@@ -8,18 +8,17 @@ module.exports = class AbstractClient extends EventEmitter {
     super()
     this._id = id
     this._parseCache = new Map()
-    this._asserts = []
-    this._retracts = []
+    this._messages = []
   }
 
   assert (factString, ...fillerValues) {
     const fact = this._toJSONFactOrPattern(factString, ...fillerValues)
-    this._asserts.push(fact)
+    this._messages.push({assert: fact})
   }
 
   retract (patternString, ...fillerValues) {
     const pattern = this._toJSONFactOrPattern(patternString, ...fillerValues)
-    this._retracts.push(pattern)
+    this._messages.push({retract: pattern})
   }
 
   async flushChanges () {
