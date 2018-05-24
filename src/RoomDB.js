@@ -27,11 +27,11 @@ module.exports = class RoomDB extends EventEmitter {
     this.setMaxListeners(100)
 
     this.on('newListener', (event, callback) => {
-      this._updateListener(event, callback, this._subscriptions.add.bind(this))
+      this._updateListener(event, callback, Set.prototype.add.bind(this._subscriptions))
     })
 
     this.on('removeListener', (event, callback) => {
-      this._updateListener(event, callback, this._subscriptions.delete.bind(this))
+      this._updateListener(event, callback, Set.prototype.delete.bind(this._subscriptions))
     })
   }
 
@@ -39,6 +39,7 @@ module.exports = class RoomDB extends EventEmitter {
     const patternMatch = event.match(/pattern:(.+)/)
     if (!patternMatch) return
     const jsonPatternsString = patternMatch[1]
+    if (!method) return
     method(jsonPatternsString)
     callback(this.select(...JSON.parse(jsonPatternsString)))
   }
