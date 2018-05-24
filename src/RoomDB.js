@@ -23,21 +23,24 @@ module.exports = class RoomDB extends EventEmitter {
     super()
     this._factMap = new Map()
     this._subscriptions = new Set()
-    this._newListenerCount = 0
 
-    // FIXME: clean up listeners
     this.setMaxListeners(100)
-    this.on('newListener', (event, callback) => {
-      const patternMatch = event.match(/pattern:(.+)/)
-      if (!patternMatch) return
-      const jsonPatternsString = patternMatch[1]
-      this._subscriptions.add(jsonPatternsString)
 
-      callback({
-        assertions: this.select(...JSON.parse(jsonPatternsString)),
-        retractions: []
-      })
+    this.on('newListener', (event, callback) => {
+      this._updateListener(event, callback, this._subscriptions.add.bind(this))
     })
+
+    this.on('removeListener', (event, callback) => {
+      this._updateListener(event, callback, this._subscriptions.delete.bind(this))
+    })
+  }
+
+  _updateListener (event, callback, method) {
+    const patternMatch = event.match(/pattern:(.+)/)
+    if (!patternMatch) return
+    const jsonPatternsString = patternMatch[1]
+    method(jsonPatternsString)
+    callback(this.select(...JSON.parse(jsonPatternsString)))
   }
 
   select (...jsonPatterns) {
@@ -63,36 +66,23 @@ module.exports = class RoomDB extends EventEmitter {
 
   _emitChanges (fn) {
     const subscriptions = this._subscriptions
-    /**
-     * beforeFacts: {
-     *  '$name is at $x, $y': Set { }
-     * }
-     */
+
     const beforeFacts = new Map()
     subscriptions.forEach(jsonPatternString => {
       const jsonPatterns = JSON.parse(jsonPatternString)
       const solutions = this.select(...jsonPatterns)
       beforeFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)))
     })
-    // assert('gorog is at 1, 2')
+
     fn()
 
-    /**
-     * afterFacts: {
-     *  '$name is at $x, $y': Set{ {name: 'gorog', x: 1, y: 2} }
-     * }
-     */
     const afterFacts = new Map()
     subscriptions.forEach(jsonPatternString => {
       const jsonPatterns = JSON.parse(jsonPatternString)
       const solutions = this.select(...jsonPatterns)
       afterFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)))
     })
-    /**
-     * {
-     *    assertions: [ {name: 'gorog', x: 1, y: 2} ]
-     * }
-     */
+
     subscriptions.forEach(jsonPatternString => {
       const before = beforeFacts.get(jsonPatternString)
       const after = afterFacts.get(jsonPatternString)
@@ -124,8 +114,6 @@ module.exports = class RoomDB extends EventEmitter {
       throw new Error('cannot assert a fact that has variables or wildcards!')
     }
     fact.asserter = clientId
-    const a = new Set()
-    a.keys
     this._factMap.set(fact.toString(), fact)
     this.emit('assert', fact.toString())
   }
