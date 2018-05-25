@@ -1,6 +1,7 @@
 const parse = require('@living-room/parser-js')
 const { Term } = require('./terms')
 const EventEmitter = require('events')
+const util = require('util')
 
 const MAX_PARSE_CACHE_SIZE = 1000
 
@@ -98,8 +99,9 @@ module.exports = class LocalClient extends EventEmitter {
       throw new Error('not enough arguments!')
     }
     if (typeof factOrPatternString !== 'string') {
-      console.dir(factOrPatternString)
-      throw new Error('factOrPatternString must be a string!')
+      throw new Error(
+        'factOrPatternString must be a string!, got\n${util.inspect(factOrPatternString)}'
+      )
     }
     let terms = this._parse(factOrPatternString)
     if (fillerValues.length > 0) {
