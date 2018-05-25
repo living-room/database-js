@@ -27,11 +27,19 @@ module.exports = class RoomDB extends EventEmitter {
     this.setMaxListeners(100)
 
     this.on('newListener', (event, callback) => {
-      this._updateListener(event, callback, Set.prototype.add.bind(this._subscriptions))
+      this._updateListener(
+        event,
+        callback,
+        Set.prototype.add.bind(this._subscriptions)
+      )
     })
 
     this.on('removeListener', (event, callback) => {
-      this._updateListener(event, callback, Set.prototype.delete.bind(this._subscriptions))
+      this._updateListener(
+        event,
+        callback,
+        Set.prototype.delete.bind(this._subscriptions)
+      )
     })
   }
 
@@ -91,18 +99,29 @@ module.exports = class RoomDB extends EventEmitter {
       const assertions = Array.from(difference(after, before)).map(JSON.parse)
       const retractions = Array.from(difference(before, after)).map(JSON.parse)
       if (assertions.length + retractions.length) {
-        this.emit(`pattern:${jsonPatternString}`, {
+        const data = {
           pattern: jsonPatternString,
           assertions,
           retractions
-        })
+        }
+        this.emit(`pattern:${jsonPatternString}`, data)
       }
     })
   }
 
+  process (clientId, messages) {
+    const processQueue = messages => {
+      messages.forEach(message => {
+        if (message.assert) this._assert(clientId, message.assert)
+        if (message.retract) this._retract(clientId, message.retract)
+      })
+    }
+    this._emitChanges(processQueue.bind(this, messages))
+  }
+
   assert (...args) {
-    const assert = this._assert.bind(this, ...args)
-    this._emitChanges(assert)
+    const assertion = this._assert.bind(this, ...args)
+    this._emitChanges(assertion)
   }
 
   _assert (clientId, factJSON) {

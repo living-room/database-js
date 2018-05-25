@@ -1,23 +1,39 @@
-const AbstractClient = require('./AbstractClient')
+const parse = require('@living-room/parser-js')
 const { Term } = require('./terms')
+const EventEmitter = require('events')
 
-module.exports = class LocalClient extends AbstractClient {
+const MAX_PARSE_CACHE_SIZE = 1000
+
+module.exports = class LocalClient extends EventEmitter {
   constructor (db, id) {
-    super(id)
+    super()
     this._db = db
+    this._id = id
+    this._parseCache = new Map()
+    this._messages = []
 
     // TODO: If there's a way for clients to be destroyed, they need to .off() these listeners.
     db.on('assert', changes => this.emit('assert', changes))
     db.on('retract', changes => this.emit('retract', changes))
   }
 
-  /**
-   * @param [`selectstring`, `another`] select string
-   * @param callback callback
-   */
+  assert (factString, ...fillerValues) {
+    const fact = this._toJSONFactOrPattern(factString, ...fillerValues)
+    this._messages.push({ assert: fact })
+  }
 
-  subscribe (patterns, callback) {
-    if (typeof patterns === 'string') patterns = [patterns]
+  retract (factString, ...fillerValues) {
+    const fact = this._toJSONFactOrPattern(factString, ...fillerValues)
+    this._messages.push({ retract: fact })
+  }
+
+  async flushChanges () {
+    this._db.process(this._id, this._messages)
+    this._messages = []
+  }
+
+  subscribe (...patterns) {
+    const callback = patterns.splice(patterns.length - 1)[0]
     const jsonPatterns = patterns.map(patternString =>
       this._toJSONFactOrPattern(patternString)
     )
@@ -61,14 +77,6 @@ module.exports = class LocalClient extends AbstractClient {
     return results
   }
 
-  async flushChanges () {
-    this._messages.forEach(message => {
-       if (message.assert) this._db.assert(this._id, message.assert)
-       if (message.retract) this._db.retract(this._id, message.retract)
-    })
-    this._messages = []
-  }
-
   async immediatelyRetractEverythingAbout (name) {
     return this._db.retractEverythingAbout(this._id, name)
   }
@@ -83,5 +91,57 @@ module.exports = class LocalClient extends AbstractClient {
 
   toString () {
     return `[LocalClient ${this._id}]`
+  }
+
+  _toJSONFactOrPattern (factOrPatternString, ...fillerValues) {
+    if (arguments.length === 0) {
+      throw new Error('not enough arguments!')
+    }
+    if (typeof factOrPatternString !== 'string') {
+      console.dir(factOrPatternString)
+      throw new Error('factOrPatternString must be a string!')
+    }
+    let terms = this._parse(factOrPatternString)
+    if (fillerValues.length > 0) {
+      terms = terms.slice()
+    }
+    for (let idx = 0; idx < terms.length; idx++) {
+      const term = terms[idx]
+      if (term.hasOwnProperty('hole')) {
+        if (fillerValues.length === 0) {
+          throw new Error('not enough filler values!')
+        }
+        terms[idx] = this._toJSONTerm(fillerValues.shift())
+      }
+    }
+    if (fillerValues.length > 0) {
+      throw new Error('too many filler values!')
+    }
+    return terms
+  }
+
+  _toJSONTerm (value) {
+    return { value: value }
+  }
+
+  _parse (factOrPatternString) {
+    if (this._parseCache.has(factOrPatternString)) {
+      return this._parseCache.get(factOrPatternString)
+    } else {
+      this._clearParseCacheIfTooBig()
+      const terms = parse(factOrPatternString)
+      this._parseCache.set(factOrPatternString, terms)
+      return terms
+    }
+  }
+
+  _clearParseCacheIfTooBig () {
+    if (this._parseCache.size > MAX_PARSE_CACHE_SIZE) {
+      this.clearParseCache()
+    }
+  }
+
+  clearParseCache () {
+    this._parseCache.clear()
   }
 }
