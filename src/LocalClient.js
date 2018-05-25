@@ -100,7 +100,9 @@ module.exports = class LocalClient extends EventEmitter {
     }
     if (typeof factOrPatternString !== 'string') {
       throw new Error(
-        `factOrPatternString must be a string!, got ${util.inspect(factOrPatternString)}`
+        `factOrPatternString must be a string!, got ${util.inspect(
+          factOrPatternString
+        )}`
       )
     }
     let terms = this._parse(factOrPatternString)
