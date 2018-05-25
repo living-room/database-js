@@ -49,7 +49,10 @@ module.exports = class RoomDB extends EventEmitter {
     const jsonPatternsString = patternMatch[1]
     if (!method) return
     method(jsonPatternsString)
-    callback(this.select(...JSON.parse(jsonPatternsString)))
+    callback({
+      assertions: this.select(...JSON.parse(jsonPatternsString)),
+      retractions: []
+    })
   }
 
   select (...jsonPatterns) {

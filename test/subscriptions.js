@@ -14,8 +14,8 @@ test.cb('assertions are listened to', t => {
 
   client.subscribe(`$name is a $class at $x, $y`, ({ assertions, retractions }) => {
     if (emissions === 0) {
-      t.is(assertions, undefined)
-      t.is(retractions, undefined)
+      t.is(assertions, [])
+      t.is(retractions, [])
     } else if (emissions === 1) {
       t.deepEqual(assertions, [{
         name: { word: 'gorog' },
