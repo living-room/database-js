@@ -19,12 +19,12 @@ module.exports = class LocalClient extends EventEmitter {
 
   assert (factString, ...fillerValues) {
     const fact = this._toJSONFactOrPattern(factString, ...fillerValues)
-    this._messages.push({assert: fact})
+    this._messages.push({ assert: fact })
   }
 
   retract (factString, ...fillerValues) {
     const fact = this._toJSONFactOrPattern(factString, ...fillerValues)
-    this._messages.push({retract: fact})
+    this._messages.push({ retract: fact })
   }
 
   async flushChanges () {
