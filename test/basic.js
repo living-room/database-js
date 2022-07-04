@@ -1,8 +1,8 @@
 import test from 'ava'
 import RoomDB from '../src/RoomDB.js'
 
-const gorogInitial = `#gorog is a barbarian at 40, 50`
-const gorogMoves = `#gorog is a barbarian at 99, 11`
+const gorogInitial = '#gorog is a barbarian at 40, 50'
+const gorogMoves = '#gorog is a barbarian at 99, 11'
 
 test('assert adds to the log', async t => {
   const room = new RoomDB()

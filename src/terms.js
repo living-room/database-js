@@ -180,11 +180,6 @@ class Wildcard extends Term {
 }
 
 class Hole extends Term {
-  constructor () {
-    super()
-    // no-op
-  }
-
   toString () {
     return '_'
   }
