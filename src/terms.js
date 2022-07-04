@@ -202,4 +202,4 @@ class Hole extends Term {
   }
 }
 
-module.exports = { Term, Id, Word, Value, BlobRef, Variable, Wildcard, Hole }
+export { Term, Id, Word, Value, BlobRef, Variable, Wildcard, Hole }

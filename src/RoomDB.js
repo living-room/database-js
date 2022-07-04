@@ -1,24 +1,24 @@
-const LocalClient = require('./LocalClient')
-const { Id } = require('./terms')
-const Fact = require('./Fact')
-const EventEmitter = require('events')
+import LocalClient from './LocalClient.js'
+import { Id } from './terms.js'
+import Fact from './Fact.js'
+import EventEmitter from 'events'
 
 function flatten (obj) {
-  for (let prop in obj) {
+  for (const prop in obj) {
     obj[prop] = obj[prop]
   }
   return obj
 }
 
 function difference (setA, setB) {
-  let difference = new Set(setA)
-  for (let elem of setB) {
+  const difference = new Set(setA)
+  for (const elem of setB) {
     difference.delete(elem)
   }
   return difference
 }
 
-module.exports = class RoomDB extends EventEmitter {
+export default class RoomDB extends EventEmitter {
   constructor () {
     super()
     this._factMap = new Map()
@@ -67,7 +67,7 @@ module.exports = class RoomDB extends EventEmitter {
       solutions.push(env)
     } else {
       const pattern = patterns[0]
-      for (let fact of this._facts) {
+      for (const fact of this._facts) {
         const newEnv = Object.create(env)
         if (pattern.match(fact, newEnv)) {
           this._collectSolutions(patterns.slice(1), newEnv, solutions)

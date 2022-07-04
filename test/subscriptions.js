@@ -1,5 +1,5 @@
-const test = require('ava')
-const RoomDB = require('../src/RoomDB')
+import test from 'ava'
+import RoomDB from '../src/RoomDB.js'
 
 const gorogInitial = `gorog is a barbarian at 40, 50`
 

@@ -1,11 +1,11 @@
-const parse = require('@living-room/parser-js')
-const { Term } = require('./terms')
-const EventEmitter = require('events')
-const util = require('util')
+import parse from '@living-room/parser-js'
+import { Term } from './terms.js'
+import EventEmitter from 'events'
+import util from 'util'
 
 const MAX_PARSE_CACHE_SIZE = 1000
 
-module.exports = class LocalClient extends EventEmitter {
+export default class LocalClient extends EventEmitter {
   constructor (db, id) {
     super()
     this._db = db
@@ -55,8 +55,8 @@ module.exports = class LocalClient extends EventEmitter {
         return results
       },
       async do (callbackFn) {
-        for (let solution of solutions) {
-          for (let name in solution) {
+        for (const solution of solutions) {
+          for (const name in solution) {
             // force serialization and deserialization to simulate going over the network
             const json = JSON.parse(JSON.stringify(solution[name]))
             solution[name] = Term.fromJSON(json).toRawValue()
@@ -125,7 +125,7 @@ module.exports = class LocalClient extends EventEmitter {
   }
 
   _toJSONTerm (value) {
-    return { value: value }
+    return { value }
   }
 
   _parse (factOrPatternString) {

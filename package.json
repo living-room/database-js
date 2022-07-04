@@ -3,15 +3,15 @@
   "version": "0.6.20",
   "description": "A Datalog-style database that enables programmers to represent facts in natural language.",
   "main": "src/RoomDB.js",
+  "type": "module",
   "dependencies": {
     "@living-room/parser-js": "^0.4.0",
-    "node-fetch": "^2"
+    "node-fetch": "^3"
   },
   "devDependencies": {
-    "ava": "^1.0.0-rc",
-    "husky": "^1",
+    "ava": "^4.3.0",
     "npm-run-all": "^4",
-    "prettier-standard": "^8"
+    "standard": "^17.0.0"
   },
   "repository": {
     "type": "git",
@@ -31,14 +31,9 @@
   },
   "homepage": "https://github.com/living-room/database-js#readme",
   "scripts": {
-    "format": "prettier-standard src/*js",
+    "lint": "standard src/*js",
+    "format": "npm run lint -- --fix",
     "develop": "nodemon --watch src --watch tests --exec 'npm run test'",
     "test": "ava"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm-run-all -s format test",
-      "pre-push": "npm-run-all -s format test"
-    }
   }
 }
