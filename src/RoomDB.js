@@ -3,11 +3,20 @@ import { Id } from './terms.js'
 import Fact from './Fact.js'
 import EventEmitter from 'events'
 
-function flatten (obj) {
-  for (const prop in obj) {
-    obj[prop] = obj[prop]
+/**
+ * This flatten function keeps the Object prototype
+ * If you try Object.assign({}, ...obj), it only keeps "plain" data,
+ * so callbacks like `do`, and `doAll` will be preserved
+ *
+ * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign#properties_on_the_prototype_chain_and_non-enumerable_properties_cannot_be_copied
+ */
+
+function flatten (object) {
+  const flattened = {}
+  for (const prop in object) {
+    flattened[prop] = object[prop]
   }
-  return obj
+  return flattened
 }
 
 function difference (setA, setB) {
@@ -24,7 +33,7 @@ export default class RoomDB extends EventEmitter {
     this._factMap = new Map()
     this._subscriptions = new Set()
 
-    this.setMaxListeners(100)
+    this.setMaxListeners(Infinity)
 
     this.on('newListener', (event, callback) => {
       this._updateListener(
@@ -43,16 +52,16 @@ export default class RoomDB extends EventEmitter {
     })
   }
 
-  _updateListener (event, callback, method) {
+  _updateListener (event, fn, method) {
     const patternMatch = event.match(/pattern:(.+)/)
     if (!patternMatch) return
     const jsonPatternsString = patternMatch[1]
     if (!method) return
     method(jsonPatternsString)
-    callback({
-      assertions: this.select(...JSON.parse(jsonPatternsString)),
-      retractions: []
-    })
+    const jsonPatterns = JSON.parse(jsonPatternsString)
+    const assertions = this.select(...jsonPatterns)
+    const retractions = []
+    fn({ assertions, retractions })
   }
 
   select (...jsonPatterns) {
@@ -137,8 +146,9 @@ export default class RoomDB extends EventEmitter {
       throw new Error('cannot assert a fact that has variables or wildcards!')
     }
     fact.asserter = clientId
-    this._factMap.set(fact.toString(), fact)
-    this.emit('assert', fact.toString())
+    const factString = fact.toString()
+    this._factMap.set(factString, fact)
+    this.emit('assert', factString)
   }
 
   retract (...args) {

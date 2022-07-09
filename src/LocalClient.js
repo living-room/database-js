@@ -12,20 +12,69 @@ export default class LocalClient extends EventEmitter {
     this._id = id
     this._parseCache = new Map()
     this._messages = []
+    this._parse = this._parse.bind(this)
+    this._toJSONTerm = this._toJSONTerm.bind(this)
+    this._toJSONFactOrPattern = this._toJSONFactOrPattern.bind(this)
+    this.subscribe = this.subscribe.bind(this)
+    this.assert = this.assert.bind(this)
+    this.retract = this.retract.bind(this)
+    this.select = this.select.bind(this)
+    this.flushChanges = this.flushChanges.bind(this)
 
     // TODO: If there's a way for clients to be destroyed, they need to .off() these listeners.
     db.on('assert', changes => this.emit('assert', changes))
     db.on('retract', changes => this.emit('retract', changes))
   }
 
+  _parse (factOrPatternString) {
+    if (this._parseCache.has(factOrPatternString)) { return this._parseCache.get(factOrPatternString) }
+
+    this._clearParseCacheIfTooBig()
+    const terms = parse(factOrPatternString)
+    this._parseCache.set(factOrPatternString, terms)
+    return terms
+  }
+
+  _toJSONFactOrPattern (factOrPatternString, ...fillerValues) {
+    if (arguments.length === 0) throw new Error('not enough arguments!')
+
+    if (typeof factOrPatternString !== 'string') {
+      throw new Error(
+        `factOrPatternString must be a string!, got ${util.inspect(
+          factOrPatternString
+        )}`
+      )
+    }
+
+    let terms = this._parse(factOrPatternString)
+
+    if (fillerValues.length > 0) terms = terms.slice()
+
+    for (let idx = 0; idx < terms.length; idx++) {
+      const term = terms[idx]
+      const isHole = Object.prototype.hasOwnProperty.call(term, 'hole')
+      if (isHole) {
+        if (fillerValues.length === 0) { throw new Error('not enough filler values!') }
+
+        terms[idx] = this._toJSONTerm(fillerValues.shift())
+      }
+    }
+
+    if (fillerValues.length > 0) { throw new Error('too many filler values!') }
+
+    return terms
+  }
+
   assert (factString, ...fillerValues) {
     const fact = this._toJSONFactOrPattern(factString, ...fillerValues)
     this._messages.push({ assert: fact })
+    return this
   }
 
   retract (factString, ...fillerValues) {
     const fact = this._toJSONFactOrPattern(factString, ...fillerValues)
     this._messages.push({ retract: fact })
+    return this
   }
 
   async flushChanges () {
@@ -35,9 +84,7 @@ export default class LocalClient extends EventEmitter {
 
   subscribe (...patterns) {
     const callback = patterns.splice(patterns.length - 1)[0]
-    const jsonPatterns = patterns.map(patternString =>
-      this._toJSONFactOrPattern(patternString)
-    )
+    const jsonPatterns = patterns.map(pattern => this._toJSONFactOrPattern(pattern))
     return this._db.on(`pattern:${JSON.stringify(jsonPatterns)}`, callback)
   }
 
@@ -94,49 +141,8 @@ export default class LocalClient extends EventEmitter {
     return `[LocalClient ${this._id}]`
   }
 
-  _toJSONFactOrPattern (factOrPatternString, ...fillerValues) {
-    if (arguments.length === 0) {
-      throw new Error('not enough arguments!')
-    }
-    if (typeof factOrPatternString !== 'string') {
-      throw new Error(
-        `factOrPatternString must be a string!, got ${util.inspect(
-          factOrPatternString
-        )}`
-      )
-    }
-    let terms = this._parse(factOrPatternString)
-    if (fillerValues.length > 0) {
-      terms = terms.slice()
-    }
-    for (let idx = 0; idx < terms.length; idx++) {
-      const term = terms[idx]
-      if (term.hasOwnProperty('hole')) {
-        if (fillerValues.length === 0) {
-          throw new Error('not enough filler values!')
-        }
-        terms[idx] = this._toJSONTerm(fillerValues.shift())
-      }
-    }
-    if (fillerValues.length > 0) {
-      throw new Error('too many filler values!')
-    }
-    return terms
-  }
-
   _toJSONTerm (value) {
     return { value }
-  }
-
-  _parse (factOrPatternString) {
-    if (this._parseCache.has(factOrPatternString)) {
-      return this._parseCache.get(factOrPatternString)
-    } else {
-      this._clearParseCacheIfTooBig()
-      const terms = parse(factOrPatternString)
-      this._parseCache.set(factOrPatternString, terms)
-      return terms
-    }
   }
 
   _clearParseCacheIfTooBig () {

@@ -16,20 +16,23 @@ class Term {
   }
 }
 
+// Fixes some eslint warnings, I don't know why
+const hasOwnProperty = (...args) => Object.prototype.hasOwnProperty.call(...args)
+
 Term.fromJSON = json => {
-  if (json.hasOwnProperty('id')) {
+  if (hasOwnProperty(json, 'id')) {
     return new Id(json.id)
-  } else if (json.hasOwnProperty('word')) {
+  } else if (hasOwnProperty(json, 'word')) {
     return new Word(json.word)
-  } else if (json.hasOwnProperty('value')) {
+  } else if (hasOwnProperty(json, 'value')) {
     return new Value(json.value)
-  } else if (json.hasOwnProperty('blobRef')) {
+  } else if (hasOwnProperty(json, 'blobRef')) {
     return new BlobRef(json.blobRef)
-  } else if (json.hasOwnProperty('variable')) {
+  } else if (hasOwnProperty(json, 'variable')) {
     return new Variable(json.variable)
-  } else if (json.hasOwnProperty('wildcard')) {
+  } else if (hasOwnProperty(json, 'wildcard')) {
     return new Wildcard()
-  } else if (json.hasOwnProperty('hole')) {
+  } else if (hasOwnProperty(json, 'hole')) {
     return new Hole()
   } else {
     throw new Error('unrecognized JSON term: ' + JSON.stringify(json))
@@ -157,11 +160,6 @@ class Variable extends Term {
 }
 
 class Wildcard extends Term {
-  constructor () {
-    super()
-    // no-op
-  }
-
   toString () {
     return '$'
   }
